@@ -1,7 +1,6 @@
 export const API_DOMAIN = "https://api.uberchord.com/v1/chords"
 export const ROOTS = ["A", "B", "C", "D", "E", "F", "G"]
 export const MODES = [
-  "",
   "m",
   "aug",
   "dim",
