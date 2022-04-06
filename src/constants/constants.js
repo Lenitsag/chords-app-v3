@@ -1,5 +1,5 @@
-export const API_DOMAIN = "https://api.uberchord.com/v1/chords"
-export const ROOTS = ["A", "B", "C", "D", "E", "F", "G"]
+export const API_DOMAIN = "https://api.uberchord.com/v1/chords";
+export const ROOTS = ["A", "B", "C", "D", "E", "F", "G"];
 export const MODES = [
   "m",
   "aug",
@@ -23,4 +23,4 @@ export const MODES = [
   // "7maj5",
   // "7sus4",
   // "9"
-]
+];

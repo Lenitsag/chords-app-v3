@@ -3,8 +3,8 @@ import { ref, onMounted, watch } from "vue";
 import axios from "axios";
 import { ROOTS, MODES, API_DOMAIN } from "./constants/constants";
 
-const root = ref(ROOTS[4]);
-const modf = ref(MODES[0]);
+const root = ref(ROOTS[0]);
+const modf = ref("");
 const bemolle = ref("");
 
 const chordData = ref(null);
@@ -28,32 +28,23 @@ const getChord = async () => {
 };
 
 watch([root, modf, bemolle], () => {
+  if (
+    (bemolle.value === "%23" && (root.value === "B" || root.value === "E")) ||
+    (bemolle.value === "b" && (root.value === "C" || root.value === "F"))
+  ) {
+    bemolle.value = "";
+  }
   getChord();
 });
 
 onMounted(() => getChord());
+
+//todo : handle card unchecking, improve UI, add visuals, add ESLint
 </script>
 
 <template>
   <main>
     <h1>Guitar Chord Dictionary</h1>
-    <!-- <div class="chord-selector">
-      <select v-model="root">
-        <option v-for="root in ROOTS" :value="root">{{ root }}</option>
-      </select>
-      <select v-model="bemolle">
-        <option value="" ></option>
-        <option value="b" v-if="
-          root !== 'C' && 
-          root !== 'F'">♭</option>
-        <option value="%23" v-if="
-          root !== 'B' && 
-          root !== 'E'">♯</option>
-      </select>
-      <select v-model="modf">
-        <option v-for="mode in MODES" :value="mode">{{ mode ? mode  : "maj" }}</option>
-      </select>
-    </div> -->
 
     <div class="chord-selector">
       <div class="root-selector">
@@ -102,8 +93,12 @@ onMounted(() => getChord());
 
     <template v-if="!isLoading">
       <template v-if="chordData?.length">
-        <h2>Here is your chord</h2>
-        <p>{{ chordData[0].strings }}</p>
+        <figure>
+          <p>{{ chordData[0].strings }}</p>
+          <figcaption>
+            {{ chordData[0].chordName.replace(/,|\(|\)/g, "") }}
+          </figcaption>
+        </figure>
       </template>
       <p v-else>An error occured fetching chord data. Sorry !</p>
     </template>
@@ -194,8 +189,8 @@ footer {
 
 .card {
   margin: 0 5px;
-  height: 45px;
-  line-height: 45px;
+  height: 40px;
+  line-height: 40px;
   border-radius: 8px;
   border: 1px solid #ccc;
   box-shadow: #ccc 3px 3px 3px;
