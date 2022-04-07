@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import axios from "axios";
 import { ROOTS, MODES, API_DOMAIN } from "./constants/constants";
 
@@ -7,18 +7,24 @@ const root = ref(ROOTS[0]);
 const modf = ref("");
 const bemolle = ref("");
 
-const chordData = ref(null);
+const chordShapes = ref(null);
 const isLoading = ref(false);
 const error = ref(null);
 
-const getChord = async () => {
+const getChordStyle = (fingerPos, stringIndex) => ({
+  top: (fingerPos === "X" || fingerPos === "0") ? "-50px" : `calc(${(fingerPos - currentShapeOffset.value) * 80}px - 50px)`,
+  left:  `calc(${stringIndex*40}px - 16px)`,
+  animationDelay: `${stringIndex * 0.1}s`
+})
+
+const getChordShapes = async () => {
   isLoading.value = true;
 
   const url = `${API_DOMAIN}/${root.value}${bemolle.value}_${modf.value}`;
   await axios
     .get(url)
     .then((res) => {
-      chordData.value = res.data;
+      chordShapes.value = res.data;
     })
     .catch((e) => {
       error.value = e;
@@ -34,12 +40,33 @@ watch([root, modf, bemolle], () => {
   ) {
     bemolle.value = "";
   }
-  getChord();
+  getChordShapes();
 });
 
-onMounted(() => getChord());
+onMounted(() => getChordShapes());
+
+
+const currentShape = computed(() => chordShapes.value[0]);
+const currentShapeFingers = computed(() => currentShape.value?.strings.split(' '));
+const currentShapeName = computed(() => currentShape.value?.chordName.replace(/,|\(|\)/g, ""));
+const currentShapeOffset = computed(() => {
+  let offset = 0;
+  let highestFinger = 0;
+  currentShapeFingers.value.forEach(finger => {
+    if (finger !== "X" && finger > highestFinger && finger > 4) {
+      highestFinger = finger;
+      offset = finger - 4;
+      console.log("offset is " + offset);
+    }
+    
+  })
+
+  return offset;
+})
+
 
 //todo : handle card unchecking, improve UI, add visuals, add ESLint
+//todo : fix F#dim offset???
 </script>
 
 <template>
@@ -92,17 +119,28 @@ onMounted(() => getChord());
     </div>
 
     <template v-if="!isLoading">
-      <template v-if="chordData?.length">
-        <figure>
-          <p>{{ chordData[0].strings }}</p>
+      <template v-if="chordShapes?.length">
+        <figure class="chordShape">
           <figcaption>
-            {{ chordData[0].chordName.replace(/,|\(|\)/g, "") }}
+            {{ currentShapeName }}
           </figcaption>
+          <div class="fretboard">
+            <div class="xLine"  v-for="(Line, lineIndex) in 6">
+             <div 
+              class="fingerPos" 
+              :style="getChordStyle(currentShapeFingers[lineIndex], lineIndex)" 
+             >
+                  {{currentShapeFingers[lineIndex]}}
+              </div>
+              <div class="fret" v-for="(fret, fretIndex) in 4" />
+            </div>
+          </div>
+          
         </figure>
+        
       </template>
       <p v-else>An error occured fetching chord data. Sorry !</p>
     </template>
-    <p v-else>⌚</p>
 
     <footer>
       <p>
@@ -199,6 +237,71 @@ footer {
   cursor: pointer;
   &.selected {
     box-shadow: none;
+  }
+}
+
+.chord-visual {
+  margin: 0 auto;
+}
+
+.fretboard {
+  display: flex;
+  flex-direction: row;
+  margin: 0 auto;
+  margin-top: 4rem;
+  position: relative;
+  max-width: 220px;
+}
+
+.xLine {
+  border-top: 5px solid black;
+  display: flex;
+  flex-direction: column;
+
+  &:last-child {
+    border-top: 0;
+
+    .fret {
+      border: 0;
+      background-color: transparent;
+    }
+  }
+}
+
+.fret {
+  height: 80px;
+  width: 40px;
+  border: 1px solid black;
+  //todo : mettre une texture
+  background-color: rgb(0, 0, 0,0.2);
+}
+
+.fingerPos {
+  top: 0;
+  left: 0;
+  position: absolute;
+  background: black;
+  color: white;
+  border-radius: 50%;
+  padding: 1rem;
+  height: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 25px;
+  opacity: 0;
+  transform: translateY(-30px);
+  animation: fadeIn 0.15s 0s ease forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0px);
   }
 }
 </style>
