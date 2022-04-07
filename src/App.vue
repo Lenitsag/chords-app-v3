@@ -13,7 +13,7 @@ const error = ref(null);
 
 const getChordStyle = (fingerPos, stringIndex) => ({
   top: (fingerPos === "X" || fingerPos === "0") ? 
-  "-50px" : 
+  "-10px" : 
   `calc(${(fingerPos - currentShapeOffset.value) * 80}px - 50px)`,
   left:  `calc(${stringIndex*40}px - 16px)`,
   animationDelay: `${stringIndex * 0.1}s`
@@ -45,7 +45,11 @@ watch([root, modf, bemolle], () => {
   getChordShapes();
 });
 
-onMounted(() => getChordShapes());
+onMounted(() => {
+  const randomInteger = Math.floor(Math.random() * 7) + 1;
+  document.body.classList.add("bg-" + randomInteger);
+  getChordShapes();
+});
 
 
 const currentShape = computed(() => chordShapes.value[0]);
@@ -65,11 +69,12 @@ const currentShapeOffset = computed(() => {
 
 
 //todo : handle card unchecking, improve UI, add visuals, add ESLint
+//todo : move fretboard to component
 </script>
 
 <template>
   <main>
-    <h1>Guitar Chord Dictionary</h1>
+    <h1>Chose your weapon !</h1>
 
     <div class="chord-selector">
       <div class="root-selector">
@@ -119,9 +124,6 @@ const currentShapeOffset = computed(() => {
     <template v-if="!isLoading">
       <template v-if="chordShapes?.length">
         <figure class="chordShape">
-          <figcaption>
-            {{ currentShapeName }}
-          </figcaption>
           <div class="fretboard">
             <div class="xLine"  v-for="(Line, lineIndex) in 6">
              <div 
@@ -133,49 +135,57 @@ const currentShapeOffset = computed(() => {
               <div class="fret" v-for="(fret, fretIndex) in 4" />
             </div>
           </div>
-          
+          <figcaption class="chordName">
+            This chord is called <strong>{{ currentShapeName }}</strong>
+          </figcaption>
         </figure>
         
       </template>
       <p v-else>An error occured fetching chord data. Sorry !</p>
     </template>
-
-    <footer>
-      <p>
-        Powered by
-        <a
-          href="https://api.uberchord.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-          >Uberchord API</a
-        >
-        and
-        <a href="https://vuejs.org" target="_blank" rel="noopener noreferrer"
-          >Vue.js</a
-        >
-      </p>
-    </footer>
   </main>
 </template>
 
-<style>
+<style lang="scss">
+// This wil generate background classes
+@for $i from 1 through 7 {
+  .bg-#{$i} {
+    background-image: url(assets/bg-#{$i}.jpg);
+  }
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
+html {
+  position: relative;
+}
 body {
-  font-size: 16px;
   font-family: Helvetica, sans-serif;
-}
-p {
-  margin: 10px 0;
-}
-main {
-  padding: 20px;
-  max-width: 480px;
-  margin: 0 auto;
+  background: no-repeat center center fixed #333;
+  background-size: cover;
+  font-size: 16px;
+  color: #333;
   text-align: center;
+}
+a {
+  color: #fff;
+}
+
+main {
+  font-family: "Monserrat", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 5vh auto;
+  padding : 15px;
+  max-width: 480px;
+  height: 90vh;
+  background-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 4px 4px 25px 0px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(5px);
+
 }
 footer {
   position: absolute;
@@ -183,58 +193,50 @@ footer {
   left: 0;
   width: 100%;
   font-size: 0.8em;
+  text-align: center;
+  padding: 10px;
+  color: #fff
 }
 </style>
 
 <style lang="scss" scoped>
 .chord-selector {
-  .root-selector {
+  & > * {
     display: flex;
     align-items: center;
-    padding: 15px 0;
-    & > * {
-      flex: 1;
-    }
-  }
-  .bemolle-selector {
-    font-size: 1.5em;
-    display: flex;
     justify-content: center;
-    align-items: center;
-    & > * {
-      width: 15%;
-      margin: 0 5px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
+    margin: 15px 0;
+    
     .disabled {
       opacity: 0;
       pointer-events: none;
     }
   }
   .modf-selector {
-    display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
     & > * {
-      margin: 15px 0;
-      width: 100px;
+      font-size: 1em;
+      width: 60px;
+      height: 60px;
+      line-height: 60px;
+      
     }
   }
 }
 
 .card {
-  margin: 0 5px;
+  margin: 5px;
   height: 40px;
+  width: 40px;
   line-height: 40px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  box-shadow: #ccc 3px 3px 3px;
+  border-radius: 50%;
+  border: 1px solid #333;
   font-size: 1.5em;
   transition: all 0.25s ease;
   cursor: pointer;
-  &.selected {
-    box-shadow: none;
+  &.selected, &:hover {
+    background-color:#333;
+    color: #fff;
   }
 }
 
@@ -248,20 +250,25 @@ footer {
   margin: 0 auto;
   margin-top: 4rem;
   position: relative;
-  max-width: 220px;
+  max-width: 200px;
 }
 
 .xLine {
-  border-top: 5px solid black;
+  border-top: 5px solid #333;
   display: flex;
   flex-direction: column;
-
   &:last-child {
     border-top: 0;
-
     .fret {
       border: 0;
-      background-color: transparent;
+      border-left: 1px solid #333;
+      
+    }
+  }
+  &:first-child {
+    .fret {
+      border-left: 2px solid #333;
+     
     }
   }
 }
@@ -269,16 +276,19 @@ footer {
 .fret {
   height: 80px;
   width: 40px;
-  border: 1px solid black;
+  border: 1px solid #333;
+  &:last-child {
+    border-bottom: 2px solid #333;
+  }
   //todo : mettre une texture
-  background-color: rgb(0, 0, 0,0.2);
+  // background-color:#ccc;
 }
 
 .fingerPos {
   top: 0;
   left: 0;
   position: absolute;
-  background: black;
+  background: #333;
   color: white;
   border-radius: 50%;
   padding: 1rem;
@@ -290,6 +300,10 @@ footer {
   opacity: 0;
   transform: translateY(-30px);
   animation: fadeIn 0.15s 0s ease forwards;
+}
+
+.chordName {
+  margin: 15px 0;
 }
 
 @keyframes fadeIn {
