@@ -12,7 +12,9 @@ const isLoading = ref(false);
 const error = ref(null);
 
 const getChordStyle = (fingerPos, stringIndex) => ({
-  top: (fingerPos === "X" || fingerPos === "0") ? "-50px" : `calc(${(fingerPos - currentShapeOffset.value) * 80}px - 50px)`,
+  top: (fingerPos === "X" || fingerPos === "0") ? 
+  "-50px" : 
+  `calc(${(fingerPos - currentShapeOffset.value) * 80}px - 50px)`,
   left:  `calc(${stringIndex*40}px - 16px)`,
   animationDelay: `${stringIndex * 0.1}s`
 })
@@ -51,22 +53,18 @@ const currentShapeFingers = computed(() => currentShape.value?.strings.split(' '
 const currentShapeName = computed(() => currentShape.value?.chordName.replace(/,|\(|\)/g, ""));
 const currentShapeOffset = computed(() => {
   let offset = 0;
-  let highestFinger = 0;
-  currentShapeFingers.value.forEach(finger => {
-    if (finger !== "X" && finger > highestFinger && finger > 4) {
-      highestFinger = finger;
-      offset = finger - 4;
-      console.log("offset is " + offset);
-    }
-    
-  })
+  // Remove X from array to establish the highest finger position
+  const numericalArray = currentShapeFingers.value.filter(finger => finger !== "X");
+  const highestFinger = Math.max(...numericalArray);
+  if (highestFinger > 4) {      
+    offset = highestFinger - 4;
+  }
 
   return offset;
 })
 
 
 //todo : handle card unchecking, improve UI, add visuals, add ESLint
-//todo : fix F#dim offset???
 </script>
 
 <template>
