@@ -68,8 +68,9 @@ const currentShapeOffset = computed(() => {
 })
 
 
-//todo : handle card unchecking, improve UI, add visuals, add ESLint
+//todo : handle card unchecking,add ESLint
 //todo : move fretboard to component
+//todo : use another API 
 </script>
 
 <template>
