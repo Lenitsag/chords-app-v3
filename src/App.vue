@@ -1,28 +1,65 @@
 <script setup>
 import { ref, onMounted, watch, computed } from "vue";
 import axios from "axios";
-import { ROOTS, MODES, API_DOMAIN } from "./constants/constants";
+import { ROOT_NOTES, COLORS, API_DOMAIN } from "./constants/constants";
 
-const root = ref(ROOTS[0]);
-const modf = ref("");
-const bemolle = ref("");
+const currentRootNote = ref("");
+const currentColor = ref("");
+const currentAlteration = ref("");
 
 const chordShapes = ref(null);
 const isLoading = ref(false);
 const error = ref(null);
 
+// Todo : mettre 80px dans une variable
 const getChordStyle = (fingerPos, stringIndex) => ({
-  top: (fingerPos === "X" || fingerPos === "0") ? 
-  "-10px" : 
-  `calc(${(fingerPos - currentShapeOffset.value) * 80}px - 50px)`,
-  left:  `calc(${stringIndex*40}px - 16px)`,
-  animationDelay: `${stringIndex * 0.1}s`
-})
+  top:
+    fingerPos === "X" || fingerPos === "0"
+      ? "-10px"
+      : `calc(${(fingerPos - currentShapeOffset.value) * 80}px - 50px)`,
+  left: `calc(${stringIndex * 40}px - 16px)`,
+  animationDelay: `${stringIndex * 0.1}s`,
+});
+
+const handleClickRoot = (rootNote) => {
+  currentAlteration.value = "";
+  currentColor.value = "";
+
+  if (currentRootNote.value && rootNote.label === currentRootNote.value.label) {
+    currentRootNote.value = null;
+    return;
+  }
+  currentRootNote.value = rootNote;
+};
+
+const handleClickAlteration = (alt) => {
+  currentColor.value = "";
+  if (currentAlteration.value.label === alt.label) {
+    currentAlteration.value = "";
+    return;
+  }
+  currentAlteration.value = alt;
+};
+
+const handleClickColor = (color) => {
+  if (currentColor.value && color === currentColor.value) {
+    currentColor.value = "";
+    return;
+  }
+  currentColor.value = color;
+};
 
 const getChordShapes = async () => {
+  // todo : move this in external api helper
   isLoading.value = true;
 
-  const url = `${API_DOMAIN}/${root.value}${bemolle.value}_${modf.value}`;
+  const alteration = currentAlteration.value
+    ? currentAlteration.value.value
+    : "";
+
+  if (!currentRootNote.value) return;
+
+  const url = `${API_DOMAIN}/${currentRootNote.value.label}${alteration}_${currentColor.value}`;
   await axios
     .get(url)
     .then((res) => {
@@ -35,13 +72,7 @@ const getChordShapes = async () => {
   isLoading.value = false;
 };
 
-watch([root, modf, bemolle], () => {
-  if (
-    (bemolle.value === "%23" && (root.value === "B" || root.value === "E")) ||
-    (bemolle.value === "b" && (root.value === "C" || root.value === "F"))
-  ) {
-    bemolle.value = "";
-  }
+watch([currentRootNote, currentColor, currentAlteration], (value) => {
   getChordShapes();
 });
 
@@ -51,73 +82,65 @@ onMounted(() => {
   getChordShapes();
 });
 
-
 const currentShape = computed(() => chordShapes.value[0]);
-const currentShapeFingers = computed(() => currentShape.value?.strings.split(' '));
-const currentShapeName = computed(() => currentShape.value?.chordName.replace(/,|\(|\)/g, ""));
+const currentShapeFingers = computed(() =>
+  currentShape.value?.strings.split(" ")
+);
+const currentShapeName = computed(() =>
+  currentShape.value?.chordName.replace(/,|\(|\)/g, "")
+);
 const currentShapeOffset = computed(() => {
   let offset = 0;
   // Remove X from array to establish the highest finger position
-  const numericalArray = currentShapeFingers.value.filter(finger => finger !== "X");
+  const numericalArray = currentShapeFingers.value.filter(
+    (finger) => finger !== "X"
+  );
   const highestFinger = Math.max(...numericalArray);
-  if (highestFinger > 4) {      
+  if (highestFinger > 4) {
     offset = highestFinger - 4;
   }
 
   return offset;
-})
+});
 
-
-//todo : handle card unchecking,add ESLint
+//todo : add ESLint
 //todo : move fretboard to component
-//todo : use another API 
+//todo : use another API
 </script>
 
 <template>
   <main>
-    <h1>Chose your weapon !</h1>
+    <h1>Pick a root note</h1>
 
     <div class="chord-selector">
       <div class="root-selector">
         <div
           class="card"
-          @click="root = rootNote"
-          :class="{ selected: rootNote === root }"
-          v-for="rootNote in ROOTS"
+          v-for="rootNote in ROOT_NOTES"
+          :class="{ selected: currentRootNote?.label === rootNote.label }"
+          @click="handleClickRoot(rootNote)"
         >
-          {{ rootNote }}
+          {{ rootNote.label }}
         </div>
       </div>
-      <div class="bemolle-selector">
+      <div class="alteration-selector" v-if="currentRootNote">
         <div
           class="card"
-          @click="bemolle = 'b'"
-          :class="{
-            disabled: root == 'C' || root == 'F',
-            selected: bemolle === 'b',
-          }"
+          v-for="alt in currentRootNote.alt"
+          :class="{ selected: currentAlteration.value === alt.value }"
+          @click="handleClickAlteration(alt)"
         >
-          ♭
-        </div>
-        <div
-          class="card"
-          @click="bemolle = '%23'"
-          :class="{
-            disabled: root === 'B' || root === 'E',
-            selected: bemolle === '%23',
-          }"
-        >
-          ♯
+          {{ alt.label }}
         </div>
       </div>
-      <div class="modf-selector">
+      <div class="color-selector" v-if="currentRootNote">
         <div
           class="card"
-          @click="modf = mode"
-          :class="{ selected: mode === modf }"
-          v-for="mode in MODES"
+          @click="handleClickColor(color)"
+          :class="{ selected: currentColor === color }"
+          v-for="color in COLORS"
         >
-          {{ mode }}
+          {{ color }}
         </div>
       </div>
     </div>
@@ -126,12 +149,14 @@ const currentShapeOffset = computed(() => {
       <template v-if="chordShapes?.length">
         <figure class="chordShape">
           <div class="fretboard">
-            <div class="xLine"  v-for="(Line, lineIndex) in 6">
-             <div 
-              class="fingerPos" 
-              :style="getChordStyle(currentShapeFingers[lineIndex], lineIndex)" 
-             >
-                  {{currentShapeFingers[lineIndex]}}
+            <div class="xLine" v-for="(Line, lineIndex) in 6">
+              <div
+                class="fingerPos"
+                :style="
+                  getChordStyle(currentShapeFingers[lineIndex], lineIndex)
+                "
+              >
+                {{ currentShapeFingers[lineIndex] }}
               </div>
               <div class="fret" v-for="(fret, fretIndex) in 4" />
             </div>
@@ -140,7 +165,6 @@ const currentShapeOffset = computed(() => {
             This chord is called <strong>{{ currentShapeName }}</strong>
           </figcaption>
         </figure>
-        
       </template>
       <p v-else>An error occured fetching chord data. Sorry !</p>
     </template>
@@ -180,13 +204,14 @@ main {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 5vh auto;
-  padding : 15px;
+  padding: 15px;
   max-width: 480px;
+  width: calc(100% - 40px);
   height: 90vh;
   background-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 4px 4px 25px 0px rgba(0, 0, 0, 0.75);
+  box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.4);
+  border-radius: 5px;
   backdrop-filter: blur(5px);
-
 }
 footer {
   position: absolute;
@@ -196,31 +221,34 @@ footer {
   font-size: 0.8em;
   text-align: center;
   padding: 10px;
-  color: #fff
+  color: #fff;
 }
 </style>
 
 <style lang="scss" scoped>
+h1 {
+  padding: 10px 0;
+}
 .chord-selector {
   & > * {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-wrap: wrap;
     margin: 15px 0;
-    
+
     .disabled {
       opacity: 0;
       pointer-events: none;
     }
   }
-  .modf-selector {
+  .color-selector {
     flex-wrap: wrap;
     & > * {
       font-size: 1em;
       width: 60px;
       height: 60px;
       line-height: 60px;
-      
     }
   }
 }
@@ -235,9 +263,13 @@ footer {
   font-size: 1.5em;
   transition: all 0.25s ease;
   cursor: pointer;
-  &.selected, &:hover {
-    background-color:#333;
+  &.selected {
+    background-color: #333;
     color: #fff;
+  }
+  &:hover {
+    transition: all 0.1s ease;
+    transform: scale(1.2);
   }
 }
 
@@ -263,13 +295,11 @@ footer {
     .fret {
       border: 0;
       border-left: 1px solid #333;
-      
     }
   }
   &:first-child {
     .fret {
       border-left: 2px solid #333;
-     
     }
   }
 }
