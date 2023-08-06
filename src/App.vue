@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, watch, computed } from "vue";
+import Footer from "./components/AppFooter.vue";
 import axios from "axios";
 import { ROOT_NOTES, COLORS, API_DOMAIN } from "./constants/constants";
 
@@ -171,6 +172,8 @@ const currentShapeOffset = computed(() => {
       </template>
       <p v-else>An error occured fetching chord data. Sorry !</p>
     </template>
+
+    <Footer />
   </main>
 </template>
 
