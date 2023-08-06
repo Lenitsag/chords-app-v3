@@ -72,7 +72,7 @@ const getChordShapes = async () => {
   isLoading.value = false;
 };
 
-watch([currentRootNote, currentColor, currentAlteration], (value) => {
+watch([currentRootNote, currentColor, currentAlteration], () => {
   getChordShapes();
 });
 
@@ -110,35 +110,38 @@ const currentShapeOffset = computed(() => {
 
 <template>
   <main>
-    <h1>Pick a root note</h1>
 
     <div class="chord-selector">
       <div class="root-selector">
         <div
+          v-for="(rootNote, index) in ROOT_NOTES"
+          :key="index"
           class="card"
-          v-for="rootNote in ROOT_NOTES"
           :class="{ selected: currentRootNote?.label === rootNote.label }"
           @click="handleClickRoot(rootNote)"
         >
           {{ rootNote.label }}
         </div>
       </div>
-      <div class="alteration-selector" v-if="currentRootNote">
+      <div v-if="!currentRootNote">Pick a root note !</div>
+      <div v-if="currentRootNote" class="alteration-selector">
         <div
+          v-for="(alt, index) in currentRootNote.alt"
+          :key="index"
           class="card"
-          v-for="alt in currentRootNote.alt"
           :class="{ selected: currentAlteration.value === alt.value }"
           @click="handleClickAlteration(alt)"
         >
           {{ alt.label }}
         </div>
       </div>
-      <div class="color-selector" v-if="currentRootNote">
+      <div v-if="currentRootNote" class="color-selector">
         <div
+          v-for="(color, index) in COLORS"
+          :key="index"
           class="card"
-          @click="handleClickColor(color)"
           :class="{ selected: currentColor === color }"
-          v-for="color in COLORS"
+          @click="handleClickColor(color)"
         >
           {{ color }}
         </div>
@@ -149,7 +152,7 @@ const currentShapeOffset = computed(() => {
       <template v-if="chordShapes?.length">
         <figure class="chordShape">
           <div class="fretboard">
-            <div class="xLine" v-for="(Line, lineIndex) in 6">
+            <div v-for="(Line, lineIndex) in 6" :key="lineIndex" class="xLine">
               <div
                 class="fingerPos"
                 :style="
@@ -158,7 +161,7 @@ const currentShapeOffset = computed(() => {
               >
                 {{ currentShapeFingers[lineIndex] }}
               </div>
-              <div class="fret" v-for="(fret, fretIndex) in 4" />
+              <div v-for="(fret, fretIndex) in 4" :key="fretIndex" class="fret" />
             </div>
           </div>
           <figcaption class="chordName">
